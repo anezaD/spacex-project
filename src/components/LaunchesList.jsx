@@ -1,5 +1,5 @@
 import { useQuery, gql } from '@apollo/client';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import dateFormatter from '../util/DateFormatter';
 import EnergyConsumptionResults from './EnergyConsumptionResults';
@@ -55,7 +55,8 @@ const LaunchesList = () => {
 
     const [selectedLaunches, setSelectedLaunches] = useState([]);
     const [massOfLaunches, setMassOfLaunches] = useState([]);
-    useEffect(() => {
+
+    const fetchMasses = useCallback(() => {
         const massOfLaunchesArray = selectedLaunches.map(id => {
             const item = data.launches.find(launch => launch.id === id);
             console.log(item);
@@ -63,8 +64,6 @@ const LaunchesList = () => {
         });
 
         setMassOfLaunches(massOfLaunchesArray);
-        console.log(data);
-
     }, [selectedLaunches, data]);
 
     if (loading) return <p>Loading...</p>;
@@ -93,7 +92,7 @@ const LaunchesList = () => {
     return (
         <div style={{ display: "flex", justifyContent: "center", marginTop: "3rem", height: 700, width: '80%' }}>
             <div>
-                <EnergyConsumptionResults massOfSelectedLaunches={massOfLaunches} />
+                <EnergyConsumptionResults onFetchMasses={fetchMasses} masses={massOfLaunches} />
                 <DataGrid
                     rows={data.launches}
                     columns={columns}
