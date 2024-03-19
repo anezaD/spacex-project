@@ -2,7 +2,7 @@ import { useQuery, gql } from '@apollo/client';
 import { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import dateFormatter from '../util/DateFormatter';
-
+import EnergyConsumptionResults from './EnergyConsumptionResults';
 
 //All data for "Admin" user 
 const Data_Launches = gql`
@@ -93,6 +93,7 @@ const LaunchesList = () => {
     return (
         <div style={{ display: "flex", justifyContent: "center", marginTop: "3rem", height: 700, width: '80%' }}>
             <div>
+                <EnergyConsumptionResults massOfSelectedLaunches={massOfLaunches} />
                 <DataGrid
                     rows={data.launches}
                     columns={columns}
