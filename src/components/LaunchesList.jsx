@@ -1,117 +1,90 @@
-import { useQuery, gql } from '@apollo/client';
 import { useState, useCallback } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import dateFormatter from '../util/DateFormatter';
 import EnergyConsumptionResults from './EnergyConsumptionResults';
+import dateFormatter from '../util/DateFormatter';
+import kilogramFormatter from '../util/KilogramFormatter';
+import { styled } from '@mui/system';
 
-//All data for "Admin" user 
-const Data_Launches = gql`
- query {
-   launches {
-    mission_name
-    id
-    launch_date_local
-    rocket {
-        rocket_name
-        rocket {
-            mass {
-                kg
-            }
-        }
-    }
-  }
+//style component
+
+const CenteredDiv = styled('div')(({ theme }) => ({
+    ...theme.customStyles.centerPosition,
+}));
+
+const DataDiv = styled('div')(({ theme }) => ({
+    [theme.breakpoints.down('sm')]: {
+        width: '90%',
+    },
+    height: 700,
+    margin: 'auto'
 }
-`;
+));
 
-//Recent Data for "other types of users" user
-const Data_Launches_Year = gql`
-query LaunchesByYear($year: String!) {
-  launches(find: { launch_year: $year }) {
-      mission_name
-      id
-      launch_date_local
-      launch_year
-      rocket {
-        rocket_name
-        rocket {
-          mass {
-            kg
-          }
-        }
-      }
-    }
-  }
-`;
+// end - style component 
 
 
-const LaunchesList = () => {
-
-    const user = { permissions: 'guest' };
-    const { loading, error, data } = useQuery(user.permissions === 'admin' ? Data_Launches : Data_Launches_Year, {
-        variables: {
-            year: "2017" // You can change this year based on the user's permissions
-        }
-    });
+const LaunchesList = ({ launches }) => {
 
     const [selectedLaunches, setSelectedLaunches] = useState([]);
     const [massOfLaunches, setMassOfLaunches] = useState([]);
 
     const fetchMasses = useCallback(() => {
-        const massOfLaunchesArray = selectedLaunches.map(id => {
-            const item = data.launches.find(launch => launch.id === id);
-            console.log(item);
-            return item ? item.rocket.rocket.mass.kg : null;
-        });
-
-        setMassOfLaunches(massOfLaunchesArray);
-    }, [selectedLaunches, data]);
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error :</p>;
+        const selectedRowsData = launches.filter(launch => selectedLaunches.includes(launch.id));
+        setMassOfLaunches(selectedRowsData.map(launch => launch.rocket.rocket.mass.kg));
+    }, [launches, selectedLaunches]);
 
     const columns =
         [
-            { field: 'id', headerName: 'Launch ID', width: 200 },
-            { field: 'mission_name', headerName: 'Mission Name', width: 200 },
+            { field: 'id', headerName: 'Launch ID', flex: 1, minWidth: 200 },
+            { field: 'mission_name', headerName: 'Mission Name', flex: 1, minWidth: 200 },
             {
-                field: 'rocket', headerName: 'Rocket Name', width: 200,
+                field: 'rocket', headerName: 'Rocket Name', flex: 1, minWidth: 200,
                 valueGetter: (params) => {
                     return params.row.rocket.rocket_name;
                 },
             },
             {
-                field: 'launch_date_local', headerName: 'Launch Date', width: 200,
+                field: 'launch_date_local', headerName: 'Launch Date', flex: 1, minWidth: 200,
                 valueFormatter: (params) => {
                     const date = new Date(params.value);
                     return dateFormatter.format(date);
-                }
+                },
             },
-            { field: 'launch_success', headerName: 'Success', width: 150 }
+            {
+                field: 'mass', headerName: 'Mass of rochet', flex: 1, minWidth: 200,
+                valueGetter: (params) => {
+                    return params.row.rocket.rocket.mass.kg;
+
+                },
+                valueFormatter: (params) => {
+                    return kilogramFormatter.format(params.value);
+                },
+            }
         ];
 
     return (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "3rem", height: 700, width: '80%' }}>
-            <div>
-                <EnergyConsumptionResults onFetchMasses={fetchMasses} masses={massOfLaunches} />
-                <DataGrid
-                    rows={data.launches}
-                    columns={columns}
-                    initialState={{
-                        pagination: {
-                            paginationModel: { page: 0, pageSize: 25 },
-                        },
-                    }}
-
-                    pageSizeOptions={[5, 10, 25, 50, 100]}
-                    checkboxSelection
-                    onRowSelectionModelChange={(selectedLaunchIds) => {
-                        console.log(selectedLaunchIds);
-                        setSelectedLaunches(selectedLaunchIds);
-                    }}
-                />
-
-            </div>
-        </div>
+        <>
+            <EnergyConsumptionResults masses={massOfLaunches} onFetchMasses={fetchMasses} />
+            <CenteredDiv >
+                <DataDiv >
+                    <DataGrid
+                        rows={launches}
+                        columns={columns}
+                        initialState={{
+                            pagination: {
+                                paginationModel: { page: 0, pageSize: 25 },
+                            },
+                        }}
+                        pageSizeOptions={[5, 10, 25, 50, 100]}
+                        checkboxSelection
+                        onRowSelectionModelChange={(newSelectionModel) => {
+                            setSelectedLaunches(newSelectionModel);
+                        }}
+                        rowSelectionModel={selectedLaunches}
+                    />
+                </DataDiv>
+            </CenteredDiv>
+        </>
     );
 }
 
