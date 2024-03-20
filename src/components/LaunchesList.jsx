@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
+import { styled } from '@mui/system';
+
 import EnergyConsumptionResults from './EnergyConsumptionResults';
 import dateFormatter from '../util/DateFormatter';
 import kilogramFormatter from '../util/KilogramFormatter';
-import { styled } from '@mui/system';
+import ApexCharts from 'react-apexcharts';
+
 
 //style component
 
@@ -16,7 +19,8 @@ const DataDiv = styled('div')(({ theme }) => ({
         width: '90%',
     },
     height: 700,
-    margin: 'auto'
+    margin: 'auto',
+    width: '70%'
 }
 ));
 
@@ -27,11 +31,27 @@ const LaunchesList = ({ launches }) => {
 
     const [selectedLaunches, setSelectedLaunches] = useState([]);
     const [massOfLaunches, setMassOfLaunches] = useState([]);
+    const [nameOfMissions, setNameOfMissions] = useState([]);
 
     const fetchMasses = useCallback(() => {
         const selectedRowsData = launches.filter(launch => selectedLaunches.includes(launch.id));
+        setNameOfMissions(selectedRowsData.map(launch => launch.mission_name));
         setMassOfLaunches(selectedRowsData.map(launch => launch.rocket.rocket.mass.kg));
     }, [launches, selectedLaunches]);
+
+    const chartOptions = {
+        chart: {
+            type: 'bar'
+        },
+        xaxis: {
+            categories: nameOfMissions.slice(0, 5)
+        }
+    };
+
+    const chartSeries = [{
+        name: 'Mass',
+        data: massOfLaunches.slice(0, 5)
+    }];
 
     const columns =
         [
@@ -83,6 +103,15 @@ const LaunchesList = ({ launches }) => {
                         rowSelectionModel={selectedLaunches}
                     />
                 </DataDiv>
+            </CenteredDiv>
+            <CenteredDiv >
+                <ApexCharts
+                    options={chartOptions}
+                    series={chartSeries}
+                    type="bar"
+                    height={450}
+                    width={450}
+                />
             </CenteredDiv>
         </>
     );
